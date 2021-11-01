@@ -13,7 +13,7 @@ RUN drogon_ctl create project mbta && \
     apt install vim -y && \
     cp /opt/app/CMakeLists.txt . && \
     apt install libcurl4-openssl-dev -y && \
-    cp /opt/app/controllers/* controllers/ && \
+    # cp /opt/app/controllers/* controllers/ && \
     cd build && \
     cmake .. && \
     make
