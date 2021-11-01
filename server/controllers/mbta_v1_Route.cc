@@ -17,3 +17,12 @@ void Route::getInfo(const HttpRequestPtr &req, std::function<void (const HttpRes
     callback(resp);
 }
 
+void Route::getBasicInfo(const HttpRequestPtr &req, std::function<void (const HttpResponsePtr &)> &&callback, std::string route) const {
+    LOG_DEBUG<<"Route "<<route<<"\n";
+
+    Json::Value ret;
+    ret["route"]=route;
+    auto resp=HttpResponse::newHttpJsonResponse(ret);
+    callback(resp);
+}
+
