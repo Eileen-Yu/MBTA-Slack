@@ -1,0 +1,6 @@
+FROM drogonframework/drogon:latest
+
+RUN drogon_ctl create project mbta
+
+WORKDIR /install/drogon/mbta
+
