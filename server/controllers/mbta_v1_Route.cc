@@ -6,6 +6,8 @@
 
 using namespace mbta::v1;
 
+const std::string REQUEST_PREFIX = "https://api-v3.mbta.com/";
+const std::string API_TOKEN = "api_key=8ba0ca46476449399829b5304937dd19";
 
 // format function
 template<typename ... Args>
@@ -109,13 +111,40 @@ void Route::getInfo(const HttpRequestPtr &req, std::function<void (const HttpRes
 
 }
 
+std::string createUrlForBasicInfo(std::string route) {
+  return REQUEST_PREFIX + "routes/" + route + "?" + API_TOKEN;
+}
+
+std::string validateRoute(std::string routeInput) {
+  if (routeInput == "Green-B" || routeInput == "green-b" || routeInput == "greenb" || routeInput == "b" || routeInput == "B") {
+    return "Green-B";
+  }
+
+  return "";
+}
+
 void Route::getBasicInfo(const HttpRequestPtr &req, std::function<void (const HttpResponsePtr &)> &&callback, std::string route) const {
     LOG_DEBUG<<"Route "<<route<<"\n";
-    std::string url = "https://api-v3.mbta.com/routes/Green-B?api_key=8ba0ca46476449399829b5304937dd19";
+
+    std::string validatedRoute = validateRoute(route);
+    if (validatedRoute == "") {
+      Json::Value ret;
+      std::string message = "Invalid route input " + route;
+      ret["message"] = message;
+
+      auto resp = HttpResponse::newHttpJsonResponse(ret);
+      resp->setStatusCode(k400BadRequest);
+      callback(resp);
+
+      return;
+    }
+
+    std::string url = createUrlForBasicInfo(validatedRoute);
  
     Json::Value ret;
-    ret["route"]=route;
-    ret["data"]=getData(url).c_str();
+    ret["route"] = route;
+    ret["data"] = getData(url).c_str();
+
     auto resp=HttpResponse::newHttpJsonResponse(ret);
     callback(resp);
 }
