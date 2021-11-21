@@ -115,7 +115,7 @@ std::string createUrlForBasicInfo(std::string route) {
   return REQUEST_PREFIX + "routes/" + route + "?" + API_TOKEN;
 }
 
-std::string validateRoute(std::string routeInput) {
+std::string validateRouteGB(std::string routeInput) {
   if (routeInput == "Green-B" || routeInput == "green-b" || routeInput == "greenb" || routeInput == "b" || routeInput == "B") {
     return "Green-B";
   }
@@ -126,7 +126,7 @@ std::string validateRoute(std::string routeInput) {
 void Route::getBasicInfo(const HttpRequestPtr &req, std::function<void (const HttpResponsePtr &)> &&callback, std::string route) const {
     LOG_DEBUG<<"Route "<<route<<"\n";
 
-    std::string validatedRoute = validateRoute(route);
+    std::string validatedRoute = validateRouteGB(route);
     if (validatedRoute == "") {
       Json::Value ret;
       std::string message = "Invalid route input " + route;
