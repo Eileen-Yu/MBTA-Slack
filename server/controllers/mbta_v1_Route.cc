@@ -3,11 +3,28 @@
 #include <memory>
 #include <string>
 #include <stdexcept>
+#include <unordered_map>
 
 using namespace mbta::v1;
 
 const std::string REQUEST_PREFIX = "https://api-v3.mbta.com/";
 const std::string API_TOKEN = "api_key=8ba0ca46476449399829b5304937dd19";
+
+const std::unordered_set<std::string> GB({
+  "Green-B", "green-b", "greenb", "b", "B", "Green B", "green b", "green B"
+});
+
+const std::unordered_set<std::string> BFS({
+  "Blandford Street", "Blandford-Street", "blandford street", "blandford-street", "place-bland"
+});
+
+const std::unordered_set<std::string> GBD0({
+  "0", "boston-college"
+});
+
+const std::unordered_set<std::string> GBD1({
+  "1", "govern-center"
+});
 
 class InvalidPathError: public std::runtime_error{
   public:
@@ -99,7 +116,7 @@ std::string createUrlForInfo(std::string direction, std::string stop, std::strin
 }
 
 std::string validateRouteGB(std::string routeInput) {
-  if (routeInput != "Green-B" && routeInput != "green-b" && routeInput != "greenb" && routeInput != "b" && routeInput != "B") {
+  if (!GB.count(routeInput)) {
     throw InvalidPathError("Invalid route input: " + routeInput);
   }
 
@@ -107,13 +124,23 @@ std::string validateRouteGB(std::string routeInput) {
 }
 
 std::string validateStop(std::string stopInput) {
-  // TODO: Create a stop map
+  if (!BFS.count(stopInput)) {
+    throw InvalidPathError("Invalid stop input: " + stopInput);
+  }
+
   return "place-bland";
 }
 
 std::string validateDirection(std::string directionInput) {
-  // TODO: Create a direction map
-  return "0";
+  if (GBD0.count(directionInput)) {
+    return "0";
+  }
+
+  if (GBD1.count(directionInput)) {
+    return "1";
+  }
+
+  throw InvalidPathError("Invalid direction input: " + directionInput);
 }
 
 std::string validateSpecificGB(std::string routeInput, std::string stopInput, std::string directionInput) {
@@ -169,7 +196,7 @@ void Route::getBasicInfo(const HttpRequestPtr &req, std::function<void (const Ht
     std::string url = createUrlForBasicInfo(validatedRoute);
  
     Json::Value ret;
-    ret["route"] = route;
+    ret["route"] = validatedRoute;
     ret["data"] = getData(url).c_str();
 
     auto resp=HttpResponse::newHttpJsonResponse(ret);
