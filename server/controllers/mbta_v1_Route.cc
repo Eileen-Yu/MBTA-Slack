@@ -70,38 +70,35 @@ std::string getData(std::string url) {
   curl = curl_easy_init();
   std::string s;
 
-  if(curl) {
-    struct curl_slist *chunk = NULL;
-    chunk = curl_slist_append(chunk, "accept: application/vnd.api+json");
-    chunk = curl_slist_append(chunk, "x-api-key: 8ba0ca46476449399829b5304937dd19");
-
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, chunk);
-    
-    curl_easy_setopt(curl, CURLOPT_URL,url.c_str());
-    //curl_easy_setopt(curl, CURLOPT_URL,  "https://api-v3.mbta.com/routes/Green-B?api_key=8ba0ca46476449399829b5304937dd19");
-
-    // Prediction
-    //curl_easy_setopt(curl, CURLOPT_URL,  "https://api-v3.mbta.com/predictions?filter%5Bdirection_id%5D=1&filter%5Bstop%5D=place-bland&filter%5Broute%5D=Green-B&api_key=8ba0ca46476449399829b5304937dd19");
-
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L); //only for https
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L); //only for https
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CurlWrite_CallbackFunc_StdString);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &s);
-    //curl_easy_setopt (curl, CURLOPT_VERBOSE, 1L); //remove this to disable verbose output
-
-
-    res = curl_easy_perform(curl);
-    if(res != CURLE_OK) {
-      fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-    }
-
-    curl_easy_cleanup(curl);
+  if (!curl) {
+    throw RemoteDataError("Fail to send request");
   }
+
+  struct curl_slist *chunk = NULL;
+  chunk = curl_slist_append(chunk, "accept: application/vnd.api+json");
+  chunk = curl_slist_append(chunk, "x-api-key: 8ba0ca46476449399829b5304937dd19");
+
+  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, chunk);
+
+  curl_easy_setopt(curl, CURLOPT_URL,url.c_str());
+
+  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L); //only for https
+  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L); //only for https
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CurlWrite_CallbackFunc_StdString);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &s);
+
+  res = curl_easy_perform(curl);
+  if(res != CURLE_OK) {
+    fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+  }
+
+  curl_easy_cleanup(curl);
 
   // FIXME: Cannot caught remote data error when request failed
   if(s == ""){
     throw RemoteDataError("Fail to fetch remote data");
   }
+
   return s;
 }
 
