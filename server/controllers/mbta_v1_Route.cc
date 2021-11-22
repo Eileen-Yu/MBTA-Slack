@@ -61,36 +61,45 @@ size_t CurlWrite_CallbackFunc_StdString(void *contents, size_t size, size_t nmem
   return newLength;
 }
 
-std::string getData(std::string url) {
-  CURL *curl;
-  CURLcode res;
-
-  curl_global_init(CURL_GLOBAL_DEFAULT);
-
-  curl = curl_easy_init();
-  std::string s;
-
-  if (!curl) {
+CURL* initCurl() {
+  try {
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    return curl_easy_init();
+  } catch (...) {
     throw RemoteDataError("Fail to send request");
   }
+}
 
+void configCurl(CURL* curl, std::string* s){
   struct curl_slist *chunk = NULL;
   chunk = curl_slist_append(chunk, "accept: application/vnd.api+json");
   chunk = curl_slist_append(chunk, "x-api-key: 8ba0ca46476449399829b5304937dd19");
-
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, chunk);
-
-  curl_easy_setopt(curl, CURLOPT_URL,url.c_str());
 
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L); //only for https
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L); //only for https
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CurlWrite_CallbackFunc_StdString);
-  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &s);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, s);
+}
 
-  res = curl_easy_perform(curl);
+void sendRequest(CURL* curl){
+  CURLcode res = curl_easy_perform(curl);
+
   if(res != CURLE_OK) {
     fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
   }
+}
+
+std::string getData(std::string url) {
+  CURL *curl = initCurl();
+
+  std::string s;
+
+  configCurl(curl, &s);
+
+  curl_easy_setopt(curl, CURLOPT_URL,url.c_str());
+
+  sendRequest(curl);
 
   curl_easy_cleanup(curl);
 
