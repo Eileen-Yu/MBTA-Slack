@@ -48,12 +48,6 @@ std::string string_format( const std::string& format, Args ... args )
     return std::string( buf.get(), buf.get() + size - 1 ); // We don't want the '\0' inside
 }
 
-std::string getUrl(std::string direction, std::string stop, std::string line){
-  return string_format("https://api-v3.mbta.com/predictions?filter%5Bdirection_id%5D=%s&filter%5Bstop%5D=%s&filter%5Broute%5D=%s&api_key=8ba0ca46476449399829b5304937dd19", direction.c_str(), stop.c_str(), line.c_str());
-}
-
-//add definition of your processing function here
-
 size_t CurlWrite_CallbackFunc_StdString(void *contents, size_t size, size_t nmemb, std::string *s) {
   size_t newLength = size*nmemb;
   try {
