@@ -9,6 +9,16 @@ using namespace mbta::v1;
 const std::string REQUEST_PREFIX = "https://api-v3.mbta.com/";
 const std::string API_TOKEN = "api_key=8ba0ca46476449399829b5304937dd19";
 
+class InvalidPathError: public std::runtime_error{
+  public:
+    InvalidPathError(std::string msg) : std::runtime_error(msg) { }
+};
+
+class RemoteDataError: public std::runtime_error{
+  public:
+    RemoteDataError(std::string msg) : std::runtime_error(msg) { }
+};
+
 // format function
 template<typename ... Args>
 std::string string_format( const std::string& format, Args ... args )
@@ -76,68 +86,85 @@ std::string getData(std::string url) {
 
     curl_easy_cleanup(curl);
   }
+
+  // FIXME: Cannot caught remote data error when request failed
+  if(s == ""){
+    throw RemoteDataError("Fail to fetch remote data");
+  }
   return s;
 }
 
+std::string createUrlForInfo(std::string direction, std::string stop, std::string route) {
+  return REQUEST_PREFIX + "predictions?filter%5Bdirection_id%5D=" + direction + "&filter%5Bstop%5D=" + stop + "&filter%5Broute%5D=" + route + "&"+ API_TOKEN;
+}
 
+std::string validateRouteGB(std::string routeInput) {
+  if (routeInput != "Green-B" && routeInput != "green-b" && routeInput != "greenb" && routeInput != "b" && routeInput != "B") {
+    throw InvalidPathError("Invalid route input: " + routeInput);
+  }
+
+  return "Green-B";
+}
+
+std::string validateStop(std::string stopInput) {
+  // TODO: Create a stop map
+  return "place-bland";
+}
+
+std::string validateDirection(std::string directionInput) {
+  // TODO: Create a direction map
+  return "0";
+}
+
+std::string validateSpecificGB(std::string routeInput, std::string stopInput, std::string directionInput) {
+  std::string route = validateRouteGB(routeInput);
+  std::string stop = validateStop(stopInput);
+  std::string direction = validateDirection(directionInput);
+
+  return createUrlForInfo(direction, stop, route);
+}
 
 void Route::getInfo(const HttpRequestPtr &req, std::function<void (const HttpResponsePtr &)> &&callback, std::string route, std::string stop, std::string direction) const {
-    try {
-      LOG_DEBUG<<"Route "<<route<<"\n";
-      LOG_DEBUG<<"Stop "<<stop<<"\n";
-      LOG_DEBUG<<"Direction "<<direction<<"\n";
+  LOG_DEBUG<<"Route "<<route<<"\n";
+  LOG_DEBUG<<"Stop "<<stop<<"\n";
+  LOG_DEBUG<<"Direction "<<direction<<"\n";
 
-      // TODO: Dynamic query values based on request route
-      //std::string url = "https://api-v3.mbta.com/predictions?filter%5Bdirection_id%5D=1&filter%5Bstop%5D=place-bland&filter%5Broute%5D=Green-B&api_key=8ba0ca46476449399829b5304937dd19";
-      std::string url = getUrl(direction,stop,route);
+  try{
+    std::string validateURL = validateSpecificGB(route, stop, direction);
+    Json::Value ret;
+    ret["route"]=route;
+    ret["stop"]=stop;
+    ret["direction"]=direction;
+    ret["data"] = getData(validateURL).c_str();
+    ret["source"] = validateURL;
+    auto resp=HttpResponse::newHttpJsonResponse(ret);
+    callback(resp);
+  } catch (const InvalidPathError& e ) {
+    Json::Value ret;
+    ret["message"] = e.what();
 
-      Json::Value ret;
-      ret["route"]=route;
-      ret["stop"]=stop;
-      ret["direction"]=direction;
-      ret["data"] = getData(url).c_str();
-      ret["source"] = url;
-      auto resp=HttpResponse::newHttpJsonResponse(ret);
-      callback(resp);
-    } catch (...){
-      Json::Value ret;
-      ret["route"]=route;
-      ret["stop"]=stop;
-      ret["direction"]=direction;
-      ret["Error"] = "Unable to get data.";
-      auto resp=HttpResponse::newHttpJsonResponse(ret);
-      callback(resp);
-    }
+    auto resp = HttpResponse::newHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+  } catch (const RemoteDataError& e) {
+    Json::Value ret;
+    ret["message"] = e.what();
 
+    auto resp = HttpResponse::newHttpJsonResponse(ret);
+    resp->setStatusCode(k500InternalServerError);
+    callback(resp);
+  }
 }
 
 std::string createUrlForBasicInfo(std::string route) {
   return REQUEST_PREFIX + "routes/" + route + "?" + API_TOKEN;
 }
 
-std::string validateRouteGB(std::string routeInput) {
-  if (routeInput == "Green-B" || routeInput == "green-b" || routeInput == "greenb" || routeInput == "b" || routeInput == "B") {
-    return "Green-B";
-  }
-
-  return "";
-}
-
 void Route::getBasicInfo(const HttpRequestPtr &req, std::function<void (const HttpResponsePtr &)> &&callback, std::string route) const {
-    LOG_DEBUG<<"Route "<<route<<"\n";
+  LOG_DEBUG<<"Route "<<route<<"\n";
 
+  try {
     std::string validatedRoute = validateRouteGB(route);
-    if (validatedRoute == "") {
-      Json::Value ret;
-      std::string message = "Invalid route input " + route;
-      ret["message"] = message;
-
-      auto resp = HttpResponse::newHttpJsonResponse(ret);
-      resp->setStatusCode(k400BadRequest);
-      callback(resp);
-
-      return;
-    }
 
     std::string url = createUrlForBasicInfo(validatedRoute);
  
@@ -147,6 +174,19 @@ void Route::getBasicInfo(const HttpRequestPtr &req, std::function<void (const Ht
 
     auto resp=HttpResponse::newHttpJsonResponse(ret);
     callback(resp);
+  } catch (const InvalidPathError& e ) {
+    Json::Value ret;
+    ret["message"] = e.what();
+
+    auto resp = HttpResponse::newHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+  } catch (const RemoteDataError& e) {
+    Json::Value ret;
+    ret["message"] = e.what();
+
+    auto resp = HttpResponse::newHttpJsonResponse(ret);
+    resp->setStatusCode(k500InternalServerError);
+    callback(resp);
+  }
 }
-
-
