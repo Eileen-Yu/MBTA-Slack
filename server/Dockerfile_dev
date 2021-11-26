@@ -1,0 +1,22 @@
+FROM drogonframework/drogon:latest
+
+COPY controllers /opt/app/controllers
+COPY CMakeLists.txt /opt/app/CMakeLists.txt
+
+RUN drogon_ctl create project mbta && \
+    cd mbta && \
+    # echo "set(CURL_LIBRARY \"-lcurl\")" >> CMakeLists.txt && \
+    # echo "find_package(CURL REQUIRED)" >> CMakeLists.txt && \
+    # echo "target_include_directories(mbta PRIVATE ${CURL_INCLUDE_DIR})" >> CMakeLists.txt && \
+    # echo "target_link_libraries(mbta PRIVATE ${CURL_LIBRARIES})" >> CMakeLists.txt && \
+    apt update && \
+    apt install vim -y && \
+    cp /opt/app/CMakeLists.txt . && \
+    apt install libcurl4-openssl-dev -y && \
+    # cp /opt/app/controllers/* controllers/ && \
+    cd build && \
+    cmake .. && \
+    make
+
+WORKDIR /install/drogon/mbta
+
