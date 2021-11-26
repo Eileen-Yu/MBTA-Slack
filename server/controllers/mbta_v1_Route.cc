@@ -3,28 +3,54 @@
 #include <memory>
 #include <string>
 #include <stdexcept>
-#include <unordered_map>
+#include <unordered_set>
+#include <map>
 
 using namespace mbta::v1;
 
 const std::string REQUEST_PREFIX = "https://api-v3.mbta.com/";
 const std::string API_TOKEN = "api_key=8ba0ca46476449399829b5304937dd19";
 
-const std::unordered_set<std::string> GB({
-  "Green-B", "green-b", "greenb", "b", "B", "Green B", "green b", "green B"
-});
-
-const std::unordered_set<std::string> BFS({
+std::unordered_set<std::string> Route::BFS({
   "Blandford Street", "Blandford-Street", "blandford street", "blandford-street", "place-bland"
 });
 
-const std::unordered_set<std::string> GBD0({
+std::unordered_set<std::string> Route::GBD0({
   "0", "boston-college"
 });
 
-const std::unordered_set<std::string> GBD1({
+std::unordered_set<std::string> Route::GBD1({
   "1", "govern-center"
 });
+
+
+std::unordered_set<std::string> Route::GB({
+  "Green-B", "green-b", "greenb", "b", "B", "Green B", "green b", "green B", "B"
+});
+
+Route::Route() {
+  std::map<std::string, std::unordered_set<std::string>> line {
+    {"Green-B", GB}
+  };
+
+  std::map<std::string, std::unordered_set<std::string>> stop {
+    {"place-bland", BFS}
+  };
+
+  mapTraverse(&line, &traversedLineMap);
+  mapTraverse(&stop, &traversedStopMap);
+}
+
+void Route::mapTraverse(
+  std::map<std::string, std::unordered_set<std::string>>* originMap,
+  std::map<std::string, std::string>* targetMap) {
+  for (auto mapItr = originMap->begin(); mapItr != originMap->end(); ++mapItr){
+    std::unordered_set<std::string>* userInput = &mapItr->second;
+    for (auto itr = userInput->begin(); itr != userInput->end(); ++itr){
+      targetMap->insert({ (*itr),  mapItr->first });
+    }
+  }
+}
 
 class InvalidPathError: public std::runtime_error{
   public:
@@ -103,7 +129,6 @@ std::string getData(std::string url) {
 
   curl_easy_cleanup(curl);
 
-  // FIXME: Cannot caught remote data error when request failed
   if(s == ""){
     throw RemoteDataError("Fail to fetch remote data");
   }
@@ -115,23 +140,25 @@ std::string createUrlForInfo(std::string direction, std::string stop, std::strin
   return REQUEST_PREFIX + "predictions?filter%5Bdirection_id%5D=" + direction + "&filter%5Bstop%5D=" + stop + "&filter%5Broute%5D=" + route + "&"+ API_TOKEN;
 }
 
-std::string validateRouteGB(std::string routeInput) {
-  if (!GB.count(routeInput)) {
-    throw InvalidPathError("Invalid route input: " + routeInput);
+std::string Route::validateRouteGB(std::string routeInput) const {
+  std::map<std::string, std::string>::const_iterator iter = traversedLineMap.find(routeInput);
+  if(iter != traversedLineMap.end()){
+    return iter->second;
   }
 
-  return "Green-B";
+  throw InvalidPathError ("Invalid line input: " + routeInput);
 }
 
-std::string validateStop(std::string stopInput) {
-  if (!BFS.count(stopInput)) {
-    throw InvalidPathError("Invalid stop input: " + stopInput);
+std::string Route::validateStop(std::string stopInput) const {
+  std::map<std::string, std::string>::const_iterator iter = traversedStopMap.find(stopInput);
+  if(iter != traversedStopMap.end()){
+    return iter->second;
   }
 
-  return "place-bland";
+  throw InvalidPathError ("Invalid line input: " + stopInput);
 }
 
-std::string validateDirection(std::string directionInput) {
+std::string Route::validateDirection(std::string directionInput) const {
   if (GBD0.count(directionInput)) {
     return "0";
   }
@@ -143,7 +170,8 @@ std::string validateDirection(std::string directionInput) {
   throw InvalidPathError("Invalid direction input: " + directionInput);
 }
 
-std::string validateSpecificGB(std::string routeInput, std::string stopInput, std::string directionInput) {
+std::string Route::validateSpecificGB(std::string routeInput, std::string stopInput, std::string directionInput) const {
+
   std::string route = validateRouteGB(routeInput);
   std::string stop = validateStop(stopInput);
   std::string direction = validateDirection(directionInput);
