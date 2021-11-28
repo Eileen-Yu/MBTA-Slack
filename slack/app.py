@@ -9,8 +9,9 @@ from dotenv import load_dotenv
 load_dotenv()
 SLACK_BOT_TOKEN = os.environ["SLACK_BOT_TOKEN"]
 SLACK_APP_TOKEN = os.environ["SLACK_APP_TOKEN"]
+SERVER_HOST = os.environ["SERVER"]
 
-MBTA_PREFIX = "http://localhost:8888/mbta/v1/route"
+MBTA_PREFIX = SERVER_HOST +  "/mbta/v1/route"
 
 MAX_PREDICTION = 3
 
