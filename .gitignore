@@ -4,4 +4,5 @@ server/ngrok
 server/.vscode
 slack/.venv/
 slack/.env
+CS2*
 
