@@ -1,0 +1,5 @@
+slack-sdk
+slack-bolt
+python-dotenv
+requests
+

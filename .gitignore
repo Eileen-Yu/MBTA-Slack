@@ -3,3 +3,5 @@ server_old
 server/ngrok
 server/.vscode
 slack/.venv/
+slack/.env
+
