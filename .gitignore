@@ -2,3 +2,4 @@ cus
 server_old
 server/ngrok
 server/.vscode
+slack/.venv/
