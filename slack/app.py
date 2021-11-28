@@ -12,54 +12,45 @@ SLACK_APP_TOKEN = os.environ["SLACK_APP_TOKEN"]
 
 MBTA_PREFIX = "http://localhost:8888/mbta/v1/route"
 
+MAX_PREDICTION = 3
+
 app = App(token=SLACK_BOT_TOKEN)
 
 @app.event("app_mention")                                                                                                       
 def mention_handler(body, say):
+        print("[Request]" + json.dumps(body))
+
         msg = body["event"]["text"]
         _self, line, stop, direction = msg.replace("\xa0", " ").split(" ")
-        print(line, stop, direction, sep = " ")
-        # response = requests.get(MBTA_PREFIX + "/" + line +  "/Green-B/place-bland/0")
         requestUrl = MBTA_PREFIX + "/" + line + "/" + stop + "/" + direction
-        print(111111111111)
-        print(requestUrl)
 
         response = requests.get(requestUrl)
-
         rawData = response.json()["data"] 
         predicts = json.loads(rawData)["data"]
 
-        pred = predicts[0]["attributes"]["arrival_time"]
-        mid = predicts[1]["attributes"]["arrival_time"]
-        last = predicts[2]["attributes"]["arrival_time"]
+        all_fields = [{
+                "type": "mrkdwn",
+                "text": "*Upcoming " + str(i + 1) + ":*\n" + p["attributes"]["arrival_time"]
+                } for i, p in enumerate(predicts)]
 
+        fields = all_fields[:MAX_PREDICTION] if len(all_fields) > 0 else {
+                "type": "mrkdwn",
+                "text": "*No upcoming rails*"
+        }
 
         slack_response = {
             "text": "Green-B Blandford Street",
         	"blocks": [
         		{
         			"type": "section",
-        			"fields": [
-        				{
-        					"type": "mrkdwn",
-        					"text": "*Upcoming 1:*\n" + pred
-        				},
-        				{
-        					"type": "mrkdwn",
-        					"text": "*Upcoming 2:*\n" + mid
-        				},
-        				{
-        					"type": "mrkdwn",
-        					"text": "*Upcoming 3:*\n" + last
-        				}
-        			]
+                                "fields": fields
         		}
         	]
         }
 
-        response_data = json.dumps(slack_response)
+        # No need to print logs for none-error cases
+        # print("[Response]" + json.dumps(slack_response, indent = 2))
 
-        print(response_data)
         say(slack_response)
 
 
