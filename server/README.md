@@ -4,9 +4,9 @@ docker build -t mbta-server .
 docker run -p 127.0.0.1:3003:80 mbta-server:latest
 ```
 
-Debug
+Dev
 ```shell
-sh debug.sh
+sh dev.sh
 
 # In the container
 cd build
