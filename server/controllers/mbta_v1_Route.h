@@ -15,6 +15,8 @@ class Route:public drogon::HttpController<Route>
     // sample stop
     static std::unordered_set<std::string> BFS;
 
+    static std::unordered_set<std::string> BUE;
+
     static std::unordered_set<std::string> GBD0;
 
     static std::unordered_set<std::string> GBD1;

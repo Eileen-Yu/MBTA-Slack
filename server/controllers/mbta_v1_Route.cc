@@ -11,9 +11,15 @@ using namespace mbta::v1;
 const std::string REQUEST_PREFIX = "https://api-v3.mbta.com/";
 const std::string API_TOKEN = "api_key=8ba0ca46476449399829b5304937dd19";
 
+// sample stops and line
 std::unordered_set<std::string> Route::BFS({
-  "Blandford Street", "Blandford-Street", "blandford street", "blandford-street", "place-bland"
+  "Blandford Street", "Blandford-Street", "blandford street", "blandford-street", "place-bland", "bfs", "BFS"
 });
+
+std::unordered_set<std::string> Route::BUE({
+  "Boston University East", "Boston-University-East", "boston-university-east", "boston university east", "bu-east", "BU-east", "bu east", "BU east", "BU East", "place-buest", "bue", "BUE"
+});
+
 
 std::unordered_set<std::string> Route::GBD0({
   "0", "boston-college"
@@ -34,7 +40,8 @@ Route::Route() {
   };
 
   std::map<std::string, std::unordered_set<std::string>> stop {
-    {"place-bland", BFS}
+    {"place-bland", BFS},
+    {"place-buest", BUE}
   };
 
   mapTraverse(&line, &traversedLineMap);
@@ -62,17 +69,6 @@ class RemoteDataError: public std::runtime_error{
     RemoteDataError(std::string msg) : std::runtime_error(msg) { }
 };
 
-// format function
-template<typename ... Args>
-std::string string_format( const std::string& format, Args ... args )
-{
-    int size_s = std::snprintf( nullptr, 0, format.c_str(), args ... ) + 1; // Extra space for '\0'
-    if( size_s <= 0 ){ throw std::runtime_error( "Error during formatting." ); }
-    auto size = static_cast<size_t>( size_s );
-    auto buf = std::make_unique<char[]>( size );
-    std::snprintf( buf.get(), size, format.c_str(), args ... );
-    return std::string( buf.get(), buf.get() + size - 1 ); // We don't want the '\0' inside
-}
 
 size_t CurlWrite_CallbackFunc_StdString(void *contents, size_t size, size_t nmemb, std::string *s) {
   size_t newLength = size*nmemb;
