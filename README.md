@@ -1,9 +1,5 @@
 # mbtaBot
 
-*Course: Programming with C++, MET CS231-A*
-*Author: Lijun Yu*
-*Due Date: Nov 29, 2021*
-
 ## Introduction
 mbtaBot is a slack bot which can feedback timely MBTA shedule. 
 By introducing the bot in the slack channel and interacting with it, users can get at most three upcoming trains for a certain stop.
