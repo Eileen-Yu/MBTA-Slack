@@ -1,7 +1,7 @@
 # mbtaBot
 
 ## Introduction
-mbtaBot is a slack bot which can feedback timely MBTA shedule. 
+mbtaBot is a slack bot which can feedback timely MBTA schedule. 
 By introducing the bot in the slack channel and interacting with it, users can get at most three upcoming trains for a certain stop.
 
 The command is quite easy, just like
